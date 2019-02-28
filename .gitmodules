@@ -1,0 +1,3 @@
+[submodule "IRMAiOSDemoApp/irmaios"]
+	path = IRMAiOSDemoApp/irmaios
+	url = https://github.com/privacybydesign/irmaios.git
