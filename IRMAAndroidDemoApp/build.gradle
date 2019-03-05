@@ -18,7 +18,9 @@ allprojects {
     repositories {
         google()
         jcenter()
-        
+        maven {
+		    url "file://home/david/credentials.github.io/repos/maven2/"
+		}
     }
 }
 

@@ -56,6 +56,41 @@ func startHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Handle request to issue
+func issueHandler(w http.ResponseWriter, r *http.Request) {
+	// Call StartSession to get sessionptr
+	sessionptrObj, _, err := irmaserver.StartSession(`{
+		"type": "issuing",
+		"credentials": [{
+			"credential": "irma-demo.MijnOverheid.fullName",
+			"attributes": {
+				"firstnames": "Johan Pieter",
+				"firstname": "Johan",
+				"familyname": "Stuivezand",
+				"prefix": "van"
+			}
+		}]
+	}`, nil)
+	
+	if err != nil {
+		fmt.Printf("Error: %s\n", err.Error())
+		w.WriteHeader(500)
+		return
+	}
+	
+	// We need a string as sessionptr, so convert
+	sessionptr, err := json.Marshal(sessionptrObj)
+
+	if err != nil {
+		fmt.Printf("Error: %s\n", err.Error())
+		w.WriteHeader(500)
+		return
+	}
+	
+	// And return the session pointer.
+	fmt.Fprintf(w, "%s", sessionptr)
+}
+
 // Get results for previously started session (session token is in querystring)
 func resultHandler(w http.ResponseWriter, r *http.Request) {
 	token, err := url.QueryUnescape(r.URL.RawQuery)
@@ -105,6 +140,7 @@ func main() {
 	// Setup the routing structure of the server, and start
 	http.HandleFunc("/irma/", irmaserver.HandlerFunc())
 	http.HandleFunc("/startSession", startHandler)
+	http.HandleFunc("/issue", issueHandler)
 	http.HandleFunc("/fetch", resultHandler)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))

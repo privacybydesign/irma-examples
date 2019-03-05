@@ -48,7 +48,7 @@ router.all("/irma/*") { request, response, next in
 	next()
 }
 
-router.get("/startSession") { request, response, next in
+router.post("/startSession") { request, response, next in
 	// Start the session
 	guard let (sessionptr, token) = try? StartSession(
 		sessionRequest:"{\"type\": \"disclosing\", \"content\": [{\"label\": \"Naam\", \"attributes\": [\"irma-demo.MijnOverheid.fullName.firstname\"]}]}"
@@ -61,6 +61,33 @@ router.get("/startSession") { request, response, next in
 	// And send the resulting session ptr and token to client
 	let result = ["sessionptr": sessionptr, "token": token]
 	response.send(json: result)
+	next()
+}
+
+router.post("/issue") { request, response, next in
+	// Start issuance
+	guard let (sessionptr, _) = try? StartSession(sessionRequest: """
+		{
+			"type": "issuing",
+			"credentials": [{
+				"credential": "irma-demo.MijnOverheid.fullName",
+				"attributes": {
+					"firstnames": "Johan Pieter",
+					"firstname": "Johan",
+					"familyname": "Stuivezand",
+					"prefix": "van"
+				}
+			}]
+		}
+	""") else {
+		// Deal with problems (somewhat) gracefully
+		response.send(status: .internalServerError)
+		next()
+		return
+	}
+	
+	// And send the resulting session ptr
+	response.send(sessionptr)
 	next()
 }
 

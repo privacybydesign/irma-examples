@@ -1,1 +1,1 @@
-include ':app', ':irmaandroid'
+include ':app'
