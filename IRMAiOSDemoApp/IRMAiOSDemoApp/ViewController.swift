@@ -16,6 +16,8 @@ class ViewController: UIViewController {
         case Waiting
         case Fetching
         case Done
+        case StartIssue
+        case WaitIssue
     }
     struct SessionMessage: Codable {
         var token: String
@@ -25,12 +27,17 @@ class ViewController: UIViewController {
     var state: SessionState = SessionState.Initial
     var status: String = "Ready"
     var sessionMsg: SessionMessage = SessionMessage(token: "", sessionptr: "")
+    var issueMsg: String = ""
     var recvToken: String = ""
     
     @IBOutlet weak var output: UILabel!
     @IBOutlet weak var input: UIButton!
     
     func handleToken(_ token: String) {
+        if (token == "" || state == SessionState.WaitIssue) {
+            reset();
+            return;
+        }
         state = SessionState.Fetching
         status = "Fetching result..."
         updateStatus()
@@ -83,6 +90,41 @@ class ViewController: UIViewController {
         } else {
             reset()
         }
+    }
+    
+    @IBAction func clickIssue(_ _: Any) {
+        if state != SessionState.Initial {
+            reset()
+        }
+        status = "Starting issuing..."
+        updateStatus()
+        input.setTitle("Reset", for: .normal)
+        state = SessionState.StartIssue
+        performSelector(inBackground: #selector(startIssue), with: nil)
+    }
+    
+    @objc func startIssue() {
+        let urlString : String = "http://localhost:8080/issue"
+        
+        if let url = URL(string : urlString) {
+            if let sessionptr = try? String(contentsOf: url) {
+                // We get back the session ptr
+                issueMsg = sessionptr
+                performSelector(onMainThread: #selector(openIssue), with: nil, waitUntilDone: false)
+            }
+        }
+    }
+    
+    @objc func openIssue() {
+        let retURLString = "irmatest:retdemo"
+        
+        // And start the irma_mobile app
+        if StartIRMA(sessionPointer: issueMsg, returnURL: retURLString) {
+            status = "Waiting..."
+        } else {
+            status = "Error: Internal error"
+        }
+        updateStatus()
     }
     
     @objc func startSession() {
